@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable, Alert } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -14,14 +14,56 @@ const RequestTemplate = () => {
     longitudeDelta: 0.0121,
   });
 
-  const handleNextPress = () => {
-    setIsPreferencesView(true); // Switch to Preferences view
+  const [title, setTitle] = useState('dzxc'); // Request Title
+  const [description, setDescription] = useState('xzc'); 
+  const [category, setCategory] = useState('Others'); // Category
+
+  const handleStart = async () => {
+    // Ensure all fields are filled out
+    if (!title.trim() || !description.trim()) {
+      Alert.alert('Error', 'Please fill out all fields');
+      return;
+    }
+  
+    const requestData = {
+      title: title.trim(),
+      description: description.trim(),
+      category: category.trim(),
+      radius,
+      waitTime,
+      region, // Includes latitude, longitude, latitudeDelta, and longitudeDelta
+    };
+  
+    try {
+      const response = await fetch('http://10.0.2.2:5000/api/requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Request saved:', data);
+        setIsPreferencesView(true); // Switch to Preferences view
+      } else {
+        Alert.alert('Error', 'Failed to save request');
+      }
+    } catch (error) {
+      console.error('Error saving request:', error);
+      Alert.alert('Error', 'An error occurred while saving the request');
+    }
   };
 
   const handleBackPress = () => {
     if (isPreferencesView) {
       setIsPreferencesView(false); // Go back to form view
     }
+  };
+
+  const handleNextPress = () => {
+    setIsPreferencesView(true); // Switch to preferences view when Next is clicked
   };
 
   return (
@@ -66,7 +108,7 @@ const RequestTemplate = () => {
 
           <Text style={styles.poolingText}>Pooling with 0 users</Text>
 
-          <TouchableOpacity style={styles.startButton}>
+          <TouchableOpacity style={styles.startButton} onPress={handleStart}>
             <Text style={styles.startButtonText}>Start Pooling</Text>
           </TouchableOpacity>
         </>
@@ -87,18 +129,23 @@ const RequestTemplate = () => {
             style={styles.input}
             placeholder="Enter Request Title"
             placeholderTextColor="#999"
+            value={title}
+            onChangeText={setTitle}
           />
           <TextInput
             style={styles.input}
             placeholder="Describe your Request"
             placeholderTextColor="#999"
             multiline
+            value={description}
+            onChangeText={setDescription}
           />
           <TextInput
             style={styles.input}
             placeholder="Category"
             placeholderTextColor="#999"
-            value="Others"
+            value={category}
+            onChangeText={setCategory}
           />
 
           <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>

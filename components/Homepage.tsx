@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';  // Import axios for making HTTP requests
 import { RootStackParamList } from '../App';
 import Navbar from './Navbar';
 
@@ -9,6 +10,16 @@ type HomepageNavigationProp = StackNavigationProp<RootStackParamList, 'Homepage'
 
 const Homepage: React.FC = () => {
   const navigation = useNavigation<HomepageNavigationProp>();
+
+  // Function to store the message in the database
+  const storeMessage = async () => {
+    try {
+      const response = await axios.post('http://localhost:5000/store', { message: 'hi' });
+      console.log('Data stored successfully:', response.data);
+    } catch (error) {
+      console.error('Error storing data:', error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -41,7 +52,7 @@ const Homepage: React.FC = () => {
         {/* Categories Section */}
         <Text style={styles.categoriesText}>Just explore our categories!</Text>
         <View style={styles.categories}>
-          <TouchableOpacity style={styles.categoryButton}>
+          <TouchableOpacity style={styles.categoryButton} onPress={storeMessage}>
             <Image source={require('../assets/images/Cabimage.jpg')} style={styles.categoryImage} />
             <Text style={styles.categoryText}>RENTAL</Text>
           </TouchableOpacity>
@@ -57,6 +68,7 @@ const Homepage: React.FC = () => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

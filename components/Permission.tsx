@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert, PermissionsAndroid } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Alert,
+  PermissionsAndroid,
+} from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 
@@ -8,8 +16,18 @@ const Permission = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const requestLocationPermission = async () => {
-    console.log('requestLocationPermission called'); // Debug log to confirm function call
+    console.log('Requesting location permission...');
     try {
+      const hasPermission = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+      );
+      if (hasPermission) {
+        console.log('Permission already granted');
+        Alert.alert('Permission granted');
+        navigation.navigate('Homepage');
+        return;
+      }
+
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         {
@@ -22,68 +40,68 @@ const Permission = () => {
 
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
         Alert.alert('Permission granted', 'You can now access location');
-        navigation.navigate('Homepage'); // Navigates to Homepage
+        navigation.navigate('Homepage');
       } else {
         Alert.alert('Permission denied', 'You need to enable location permission');
       }
     } catch (err) {
-      console.warn(err);
+      console.error('Permission request failed:', err);
     }
   };
 
-  if (showLocationPage) {
-    return (
-      <View style={styles.container}>
-        <TouchableOpacity style={styles.closeButton} onPress={() => setShowLocationPage(false)}>
-          <Text style={styles.closeText}>×</Text>
-        </TouchableOpacity>
-
-        <Image
-          source={require('../assets/images/LocationImage.jpg')}
-          style={styles.image}
-        />
-
-        <Text style={styles.title}>Enable Location</Text>
-        <Text style={styles.description}>
-          The app uses your location to provide you with offers and pool available within your vicinity for the best experience.
-        </Text>
-
-        <TouchableOpacity
-          style={styles.continueButton}
-          onPress={requestLocationPermission} // Trigger permission request on press
-        >
-          <Text style={styles.continueText}>Continue</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Permissions</Text>
-      <Text style={styles.description}>
-        Allow us location and notification permission.
-      </Text>
-      <Text style={styles.note}>
-        The only reason we need this is to keep you up to date about offers and pool happening near you!
-      </Text>
-
-      <TouchableOpacity
-  style={styles.permissionButton}
-  onPress={requestLocationPermission} // Link to location permission request
->
-  <Text style={styles.permissionText}>📍 Location Access</Text>
-</TouchableOpacity>
-      <TouchableOpacity style={styles.permissionButton}>
-        <Text style={styles.permissionText}>🔔 Notification Access</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.continueButton}
-        onPress={() => setShowLocationPage(true)}
-      >
-        <Text style={styles.continueText}>Continue</Text>
-      </TouchableOpacity>
+      {showLocationPage ? (
+        <>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setShowLocationPage(false)}
+          >
+            <Text style={styles.closeText}>×</Text>
+          </TouchableOpacity>
+          <Image
+            source={require('../assets/images/LocationImage.jpg')}
+            style={styles.image}
+          />
+          <Text style={styles.title}>Enable Location</Text>
+          <Text style={styles.description}>
+            The app uses your location to provide you with offers and pools available
+            within your vicinity for the best experience.
+          </Text>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={requestLocationPermission}
+          >
+            <Text style={styles.continueText}>Continue</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <Text style={styles.title}>Permissions</Text>
+          <Text style={styles.description}>
+            Allow us location and notification permission.
+          </Text>
+          <Text style={styles.note}>
+            The only reason we need this is to keep you updated about offers and pools
+            happening near you!
+          </Text>
+          <TouchableOpacity
+            style={styles.permissionButton}
+            onPress={requestLocationPermission}
+          >
+            <Text style={styles.permissionText}>📍 Location Access</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.permissionButton}>
+            <Text style={styles.permissionText}>🔔 Notification Access</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={() => setShowLocationPage(true)}
+          >
+            <Text style={styles.continueText}>Continue</Text>
+          </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 };
