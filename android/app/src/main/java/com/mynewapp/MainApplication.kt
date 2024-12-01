@@ -1,5 +1,5 @@
-package com.mynewapp
-import com.mynewapp.BuildConfig  // Ensure this import is present
+package com.startup.requesto
+import com.startup.requesto.BuildConfig  // Ensure this import is present
 
 import android.app.Application
 import com.facebook.react.PackageList

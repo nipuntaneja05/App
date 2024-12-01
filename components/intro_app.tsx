@@ -108,11 +108,12 @@ const IntroApp = () => {
           <GoogleSignInButton />
           <Text></Text>
           <TouchableOpacity
-            style={styles.socialButton}
-            onPress={() => navigation.navigate('Permission', { formType: 'SignUp' })}
-          >
-            <Text style={styles.socialButtonText}>Continue with Email</Text>
-          </TouchableOpacity>
+  style={styles.socialButton}
+  onPress={() => navigation.navigate('Login', { formType: 'Login' })}
+>
+  <Text style={styles.socialButtonText}>Continue with Email</Text>
+</TouchableOpacity>
+
           <TouchableOpacity onPress={() => navigation.navigate('Permission')}>
             <Text style={styles.guestText}>Continue as guest</Text>
           </TouchableOpacity>

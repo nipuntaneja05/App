@@ -1,65 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, Alert, Modal, TouchableOpacity } from 'react-native';
-import {jwtDecode} from 'jwt-decode'; // Correct import for jwt-decode
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, Button, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Define the custom type for the decoded token
-interface DecodedToken {
-  user: {
-    name: string;
-    email: string;
-  };
-  exp?: number; // Optional since it may be undefined
-}
-
-const Login = () => {
-  const [formType, setFormType] = useState<'SignUp' | 'Login' | null>(null);
-  const [isModalVisible, setModalVisible] = useState(true);
+const Login = ({ navigation }: { navigation: any }) => {
+  const [formType, setFormType] = useState<'SignUp' | 'Login'>('SignUp');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleSubmit = async () => {
-    // Form validation
     if (formType === 'SignUp' && password !== confirmPassword) {
-      Alert.alert("Passwords do not match");
+      Alert.alert('Passwords do not match');
       return;
     }
 
     try {
-      const endpoint = formType === 'SignUp' ? '/api/auth/register' : '/api/auth/signin';
-      const response = await fetch(`https://requesto.in:8443${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formType === 'SignUp' ? name : undefined,
-          email,
-          password,
-        }),
-      });
+      if (formType === 'SignUp') {
+        // Save user data locally (sign-up)
+        await AsyncStorage.setItem('userName', name);
+        await AsyncStorage.setItem('userEmail', email);
+        await AsyncStorage.setItem('userPassword', password);
 
-      const result = await response.json();
-      if (response.ok) {
-        Alert.alert(`${formType} successful!`);
-        // Handle successful login/sign up
-        if (formType === 'Login') {
-          await AsyncStorage.setItem("token", result.token);
-          const decodedToken = jwtDecode<DecodedToken>(result.token);
-          await AsyncStorage.setItem("name", decodedToken.user.name);
-          await AsyncStorage.setItem("email", decodedToken.user.email);
-          setIsAuthenticated(true);
-          // Navigate to homepage or perform further actions
-        }
+        Alert.alert('Sign-Up successful! Please log in.');
+        setFormType('Login'); // Switch to login form
         setName('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-      } else {
-        Alert.alert(result.error || 'An error occurred');
+      } else if (formType === 'Login') {
+        // Check if user data exists in AsyncStorage (login)
+        const storedEmail = await AsyncStorage.getItem('userEmail');
+        const storedPassword = await AsyncStorage.getItem('userPassword');
+
+        if (storedEmail === email && storedPassword === password) {
+          Alert.alert('Login successful!');
+          navigation.navigate('Homepage'); // Replace 'HomePage' with your app's home screen
+        } else {
+          Alert.alert('Invalid email or password');
+        }
       }
     } catch (error) {
       console.error('Error:', error);
@@ -67,90 +46,47 @@ const Login = () => {
     }
   };
 
-  const handleFormSelect = (type: 'SignUp' | 'Login') => {
-    setFormType(type);
-    setModalVisible(false);
-  };
-
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = await AsyncStorage.getItem("token"); // Await the promise
-      if (token) {
-        try {
-          const decodedToken = jwtDecode<DecodedToken>(token); // Use the custom type
-          const currentTime = Date.now() / 1000;
-
-          // Check if exp is defined
-          if (decodedToken.exp && decodedToken.exp > currentTime) {
-            setIsAuthenticated(true);
-            // Navigate to homepage or perform further actions
-          } else {
-            // Handle token expiration (e.g., clear token)
-            await AsyncStorage.removeItem("token");
-          }
-        } catch (error) {
-          console.error("Token decoding error", error);
-          await AsyncStorage.removeItem("token");
-        }
-      }
-    };
-
-    checkToken(); // Call the function to check the token
-  }, []);
-
   return (
     <View style={styles.container}>
-      <Modal visible={isModalVisible} transparent={true} animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Choose an Option</Text>
-            <TouchableOpacity style={styles.optionButton} onPress={() => handleFormSelect('SignUp')}>
-              <Text style={styles.optionText}>Sign Up</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.optionButton} onPress={() => handleFormSelect('Login')}>
-              <Text style={styles.optionText}>Log In</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {formType && (
-        <>
-          <Text style={styles.modalTitle}>{formType === 'SignUp' ? 'Sign Up' : 'Log In'}</Text>
-          {formType === 'SignUp' && (
-            <TextInput
-              placeholder="Name"
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-            />
-          )}
-          <TextInput
-            placeholder="Email Address"
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-          />
-          <TextInput
-            placeholder="Password"
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          {formType === 'SignUp' && (
-            <TextInput
-              placeholder="Confirm Password"
-              style={styles.input}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-            />
-          )}
-          <Button title="Submit" onPress={handleSubmit} />
-        </>
+      <Text style={styles.modalTitle}>
+        {formType === 'SignUp' ? 'Sign Up' : 'Log In'}
+      </Text>
+      {formType === 'SignUp' && (
+        <TextInput
+          placeholder="Name"
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+        />
       )}
+      <TextInput
+        placeholder="Email Address"
+        style={styles.input}
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+      />
+      <TextInput
+        placeholder="Password"
+        style={styles.input}
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      {formType === 'SignUp' && (
+        <TextInput
+          placeholder="Confirm Password"
+          style={styles.input}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
+      )}
+      <Button title="Submit" onPress={handleSubmit} />
+      <Button
+        title={formType === 'SignUp' ? 'Already have an account? Login' : 'Need an account? Sign Up'}
+        onPress={() => setFormType(formType === 'SignUp' ? 'Login' : 'SignUp')}
+      />
     </View>
   );
 };
@@ -163,35 +99,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: 300,
-    padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 15,
-  },
-  optionButton: {
-    width: '100%',
-    padding: 15,
-    marginVertical: 10,
-    backgroundColor: '#2196F3',
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  optionText: {
-    color: '#fff',
-    fontSize: 16,
   },
   input: {
     width: '100%',

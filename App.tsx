@@ -21,7 +21,7 @@ export type RootStackParamList = {
   Profile: undefined;
   RequestTemplate: undefined;
   CabTemplate: undefined;
-  Login: undefined; // Add Login to RootStackParamList
+  Login: { formType: string }; // Add Login to RootStackParamList
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
